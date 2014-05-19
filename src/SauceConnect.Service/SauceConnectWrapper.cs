@@ -24,7 +24,7 @@ namespace SauceConnect.Service
                 {
                     StartInfo =
                         {
-                            FileName = AppDomain.CurrentDomain.BaseDirectory + "sauce_connect.exe",
+                            FileName = AppDomain.CurrentDomain.BaseDirectory + @"sc-4.0-win32\bin\sc.exe",
                             UseShellExecute = false,
                             Arguments = args,
                             RedirectStandardOutput = true,
@@ -38,6 +38,7 @@ namespace SauceConnect.Service
             try
             {
                 _sauceConnectService.EventLog.WriteEntry("Starting the sauce connect app at " + _process.StartInfo.FileName);
+                _sauceConnectService.EventLog.WriteEntry("Arguments are " + _process.StartInfo.Arguments);
                 _process.Start();
                 _process.BeginOutputReadLine();
             }
