@@ -7,12 +7,14 @@ namespace SauceConnect.Service
     public class SauceConnectWrapper
     {
         private readonly SauceConnectService _sauceConnectService;
+        private readonly ISauceLabsRestClient _sauceLabsRestClient;
         private Process _process;
         private static string _activeTunnelId;
 
-        public SauceConnectWrapper(SauceConnectService sauceConnectService)
+        public SauceConnectWrapper(SauceConnectService sauceConnectService, ISauceLabsRestClient sauceLabsRestClient)
         {
             _sauceConnectService = sauceConnectService;
+            _sauceLabsRestClient = sauceLabsRestClient;
         }
 
         public void Start(string username, string accessKey, string identifier)
@@ -71,7 +73,7 @@ namespace SauceConnect.Service
             var stringArray = dataReceivedEventArgs.Data.Split(':');
             if (stringArray.Length != 4)
                 throw new ArgumentOutOfRangeException("Array length expected to be 4 but was " + stringArray.Length);
-            _activeTunnelId = stringArray[stringArray.Length - 1];
+            _activeTunnelId = stringArray[stringArray.Length - 1].Trim();
             _sauceConnectService.EventLog.WriteEntry("Tunnel ID Detected as " + _activeTunnelId);
         }
 
@@ -88,6 +90,13 @@ namespace SauceConnect.Service
 
             _sauceConnectService.EventLog.WriteEntry("Killing the sauce connect app");
             _process.Kill();
+        }
+
+        public bool TunnelIsLive()
+        {
+            var activeTunnels = _sauceLabsRestClient.GetActiveTunnels();
+
+            return activeTunnels != null && activeTunnels.Contains(_activeTunnelId);
         }
     }
 }

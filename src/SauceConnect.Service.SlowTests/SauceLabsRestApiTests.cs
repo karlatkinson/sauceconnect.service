@@ -9,7 +9,7 @@ namespace SauceConnect.Service.SlowTests
         public void can_get_list_of_tunnels()
         {
             var sauceLabsRestClient = new SauceLabsRestClient("karlatkinson", "ACCESSKEY");
-            var existingTunnels = sauceLabsRestClient.GetExistingTunnels();
+            var existingTunnels = sauceLabsRestClient.GetActiveTunnels();
 
             Assert.That(existingTunnels.Count, Is.GreaterThan(0));
         }

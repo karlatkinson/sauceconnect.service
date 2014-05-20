@@ -8,7 +8,7 @@ namespace SauceConnect.Service
 {
     public interface ISauceLabsRestClient
     {
-        IList<string> GetExistingTunnels();
+        IList<string> GetActiveTunnels();
     }
 
     public class SauceLabsRestClient : ISauceLabsRestClient
@@ -25,7 +25,7 @@ namespace SauceConnect.Service
             _webClient.Headers[HttpRequestHeader.ContentType] = "application/json";
         }
 
-        public IList<string> GetExistingTunnels()
+        public IList<string> GetActiveTunnels()
         {
             var url = string.Format("https://saucelabs.com/rest/v1/{0}/tunnels", _userName);
             var tunnelIds = _webClient.DownloadString(url);
