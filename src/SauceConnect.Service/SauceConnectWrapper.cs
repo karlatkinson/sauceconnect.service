@@ -8,6 +8,7 @@ namespace SauceConnect.Service
     {
         private readonly SauceConnectService _sauceConnectService;
         private Process _process;
+        private static string _activeTunnelId;
 
         public SauceConnectWrapper(SauceConnectService sauceConnectService)
         {
@@ -52,12 +53,26 @@ namespace SauceConnect.Service
 
         private void ProcessOnOutputDataReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
         {
+            if (dataReceivedEventArgs.Data != null && dataReceivedEventArgs.Data.Contains("Tunnel ID: "))
+            {
+                DetermineTunnelId(dataReceivedEventArgs);
+            }
+
             var logFilePath = AppDomain.CurrentDomain.BaseDirectory + @"\sauce_connect_output_log.txt";
             using (var stream = new StreamWriter(logFilePath, true))
             {
                 stream.AutoFlush = true;
                 stream.WriteLine(dataReceivedEventArgs.Data);
             }
+        }
+
+        private void DetermineTunnelId(DataReceivedEventArgs dataReceivedEventArgs)
+        {
+            var stringArray = dataReceivedEventArgs.Data.Split(':');
+            if (stringArray.Length != 4)
+                throw new ArgumentOutOfRangeException("Array length expected to be 4 but was " + stringArray.Length);
+            _activeTunnelId = stringArray[stringArray.Length - 1];
+            _sauceConnectService.EventLog.WriteEntry("Tunnel ID Detected as " + _activeTunnelId);
         }
 
         private void ProcessOnExited(object sender, EventArgs eventArgs)
@@ -69,12 +84,10 @@ namespace SauceConnect.Service
 
         public void Stop()
         {
-            if (null != _process && !_process.HasExited)
-            {
-                _sauceConnectService.EventLog.WriteEntry("Killing the sauce connect app");
-                _process.Kill();
-            }
-                
+            if (_process == null || _process.HasExited) return;
+
+            _sauceConnectService.EventLog.WriteEntry("Killing the sauce connect app");
+            _process.Kill();
         }
     }
 }
