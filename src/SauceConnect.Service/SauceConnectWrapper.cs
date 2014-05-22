@@ -1,28 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
+using System.Timers;
+using SauceConnect.Service.Configuration;
+using SauceConnect.Service.Logging;
 
 namespace SauceConnect.Service
 {
     public class SauceConnectWrapper
     {
-        private readonly SauceConnectService _sauceConnectService;
+        private readonly ILogger _logger;
         private readonly ISauceLabsRestClient _sauceLabsRestClient;
+        private readonly ISauceConnectConfiguration _sauceConnectConfiguration;
         private Process _process;
         private static string _activeTunnelId;
+        private Timer _timer;
 
-        public SauceConnectWrapper(SauceConnectService sauceConnectService, ISauceLabsRestClient sauceLabsRestClient)
+        public SauceConnectWrapper(ILogger logger, ISauceLabsRestClient sauceLabsRestClient, ISauceConnectConfiguration sauceConnectConfiguration)
         {
-            _sauceConnectService = sauceConnectService;
+            _logger = logger;
             _sauceLabsRestClient = sauceLabsRestClient;
+            _sauceConnectConfiguration = sauceConnectConfiguration;
         }
 
-        public void Start(string username, string accessKey, string identifier)
+        public void Start()
         {
-            var args = string.Format("-u {0} -k {1}", username, accessKey);
-            if(!string.IsNullOrWhiteSpace(identifier))
-                args += "-i " + identifier;
+            var args = string.Format("--user {0} --api-key {1}", _sauceConnectConfiguration.Username, _sauceConnectConfiguration.AccessKey);
+            if(!string.IsNullOrWhiteSpace(_sauceConnectConfiguration.TunnelIdentifier))
+                args += " --tunnel-identifier " + _sauceConnectConfiguration.TunnelIdentifier;
 
             _process = new Process
                 {
@@ -36,19 +41,24 @@ namespace SauceConnect.Service
                         }
                 };
 
-            _process.Exited += ProcessOnExited;
             _process.OutputDataReceived += ProcessOnOutputDataReceived;
 
             try
             {
-                _sauceConnectService.EventLog.WriteEntry("Starting the sauce connect app at " + _process.StartInfo.FileName);
-                _sauceConnectService.EventLog.WriteEntry("Arguments are " + _process.StartInfo.Arguments);
+                _logger.Log("Starting the sauce connect app at " + _process.StartInfo.FileName);
+                _logger.Log("Arguments are " + _process.StartInfo.Arguments);
                 _process.Start();
                 _process.BeginOutputReadLine();
+
+                _timer = new Timer(_sauceConnectConfiguration.TunnelPollInterval);
+                _timer.Elapsed += (sender, eventArgs) => CheckTunnel();
+
+                _logger.Log("Checking if tunnel is active every " + TimeSpan.FromMilliseconds(_sauceConnectConfiguration.TunnelPollInterval).Minutes + " minutes.");
+                _timer.Start();
             }
             catch (Exception e)
             {
-                _sauceConnectService.EventLog.WriteEntry(e.ToString());
+                _logger.Log(e.ToString());
                 throw;
             }
             
@@ -61,12 +71,7 @@ namespace SauceConnect.Service
                 DetermineTunnelId(dataReceivedEventArgs);
             }
 
-            var logFilePath = AppDomain.CurrentDomain.BaseDirectory + @"\sauce_connect_output_log.txt";
-            using (var stream = new StreamWriter(logFilePath, true))
-            {
-                stream.AutoFlush = true;
-                stream.WriteLine(dataReceivedEventArgs.Data);
-            }
+            _logger.Log(dataReceivedEventArgs.Data);
         }
 
         private void DetermineTunnelId(DataReceivedEventArgs dataReceivedEventArgs)
@@ -75,22 +80,25 @@ namespace SauceConnect.Service
             if (stringArray.Length != 4)
                 throw new ArgumentOutOfRangeException("Array length expected to be 4 but was " + stringArray.Length);
             _activeTunnelId = stringArray[stringArray.Length - 1].Trim();
-            _sauceConnectService.EventLog.WriteEntry("Tunnel ID Detected as " + _activeTunnelId);
-        }
-
-        private void ProcessOnExited(object sender, EventArgs eventArgs)
-        {
-            _sauceConnectService.EventLog.WriteEntry("Process has stopped, stopping the service");
-            if(_sauceConnectService.CanStop)
-                _sauceConnectService.Stop();
+            _logger.Log("Tunnel ID Detected as " + _activeTunnelId);
         }
 
         public void Stop()
         {
             if (_process == null || _process.HasExited) return;
 
-            _sauceConnectService.EventLog.WriteEntry("Killing the sauce connect app");
+            _logger.Log("Killing the sauce connect app");
             _process.Kill();
+        }
+
+        private void CheckTunnel()
+        {
+            if (TunnelIsLive()) return;
+
+            _logger.Log("Tunnel is not live, attempting to restart");
+            _timer.Stop();
+            _timer.Dispose();
+            Start();
         }
 
         public bool TunnelIsLive()
@@ -103,7 +111,7 @@ namespace SauceConnect.Service
             }
             catch (Exception e)
             {
-                _sauceConnectService.EventLog.WriteEntry("Could not determine if tunnel active: " + e.Message);
+                _logger.Log("Could not determine if tunnel active: " + e.Message);
             }
 
             return activeTunnels != null && activeTunnels.Contains(_activeTunnelId);

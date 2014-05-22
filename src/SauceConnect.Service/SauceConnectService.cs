@@ -1,14 +1,13 @@
-﻿using System;
-using System.Configuration;
+﻿using System.Configuration;
 using System.ServiceProcess;
-using System.Timers;
+using SauceConnect.Service.Configuration;
+using SauceConnect.Service.Logging;
 
 namespace SauceConnect.Service
 {
     public partial class SauceConnectService : ServiceBase
     {
         private SauceConnectWrapper _sauceConnectWrapper;
-        private Timer _timer;
 
         public SauceConnectService()
         {
@@ -19,32 +18,12 @@ namespace SauceConnect.Service
         {
             EventLog.WriteEntry("Starting the service.");
 
-            var userName = ConfigurationManager.AppSettings["sauceConnectUserName"];
-            var accessKey = ConfigurationManager.AppSettings["sauceConnectAccessKey"];
-            var tunnelIdentifier = ConfigurationManager.AppSettings["sauceConnectIdentifier"];
+            var config = (SauceConnectSectionConfiguration)ConfigurationManager.GetSection("sauceLabsConfiguration");
+            var sauceLabsRestClient = new SauceLabsRestClient(config.Username, config.AccessKey);
+            var logger = new EventLogLogger(EventLog);
 
-            int pollInterval;
-            if (!int.TryParse(ConfigurationManager.AppSettings["sauceConnectPollInterval"], out pollInterval))
-            {
-                throw new ArgumentException("sauceConnectPollInterval is not valid");
-            }
-
-            _sauceConnectWrapper = new SauceConnectWrapper(this, new SauceLabsRestClient(userName, accessKey));
-            _sauceConnectWrapper.Start(userName, accessKey, tunnelIdentifier);
-
-            _timer = new Timer(pollInterval);
-            _timer.Elapsed += (sender, eventArgs) => CheckTunnel();
-
-            EventLog.WriteEntry("Checking if tunnel is active every " + TimeSpan.FromMilliseconds(pollInterval).Minutes + " minutes.");
-            _timer.Start();
-        }
-
-        private void CheckTunnel()
-        {
-            if (_sauceConnectWrapper.TunnelIsLive()) return;
-
-            EventLog.WriteEntry("Tunnel is not live, attempting to restart");
-            OnStart(new string[] {});
+            _sauceConnectWrapper = new SauceConnectWrapper(logger, sauceLabsRestClient, config);
+            _sauceConnectWrapper.Start();
         }
 
         protected override void OnStop()
