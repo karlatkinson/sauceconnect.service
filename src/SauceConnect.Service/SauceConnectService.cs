@@ -32,8 +32,10 @@ namespace SauceConnect.Service
             _sauceConnectWrapper = new SauceConnectWrapper(this, new SauceLabsRestClient(userName, accessKey));
             _sauceConnectWrapper.Start(userName, accessKey, tunnelIdentifier);
 
-            _timer = new Timer();
+            _timer = new Timer(pollInterval);
             _timer.Elapsed += (sender, eventArgs) => CheckTunnel();
+
+            EventLog.WriteEntry("Checking if tunnel is active every " + TimeSpan.FromMilliseconds(pollInterval).Minutes + " minutes.");
             _timer.Start();
         }
 

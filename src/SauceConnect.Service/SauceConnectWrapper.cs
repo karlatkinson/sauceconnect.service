@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -94,7 +95,16 @@ namespace SauceConnect.Service
 
         public bool TunnelIsLive()
         {
-            var activeTunnels = _sauceLabsRestClient.GetActiveTunnels();
+            IList<string> activeTunnels = null;
+
+            try
+            {
+                activeTunnels = _sauceLabsRestClient.GetActiveTunnels();
+            }
+            catch (Exception e)
+            {
+                _sauceConnectService.EventLog.WriteEntry("Could not determine if tunnel active: " + e.Message);
+            }
 
             return activeTunnels != null && activeTunnels.Contains(_activeTunnelId);
         }
