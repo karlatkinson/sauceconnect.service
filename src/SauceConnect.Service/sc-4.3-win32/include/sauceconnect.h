@@ -73,4 +73,63 @@ int sc_status(struct sc_ctx *ctx);
 #define SC_INFO_KGP_IS_CONNECTED 0x01
 #define SC_INFO_KGP_LAST_STATUS_CHANGE 0x02
 int sc_get_info(struct sc_ctx *ctx, int what, int *info);
+
+#define SC_EXITCODE_UNKNOWN 0
+#define SC_EXITCODE_ALLOC_ERROR 1
+#define SC_EXITCODE_LOCAL_LISTEN_ERROR 2
+#define SC_EXITCODE_LOCAL_ACCEPT_ERROR 3
+#define SC_EXITCODE_KGP_INVALID_PACKET 4
+#define SC_EXITCODE_KGP_CONNECT_ERROR 5
+#define SC_EXITCODE_KGP_CONNECTION_CLOSED 6
+#define SC_EXITCODE_KGP_LISTEN_ERROR 7
+#define SC_EXITCODE_CMD_STOP 8
+#define SC_EXITCODE_CMD_SOCKET_ERROR 9
+#define SC_EXITCODE_CMD_CONNECTION_CLOSED 10
+#define SC_EXITCODE_DNS_RESET_ERROR 11
+int sc_error(struct sc_ctx *ctx);
+
+static inline char *sc_err2str(int exitcode)
+{
+    switch (exitcode) {
+        case SC_EXITCODE_UNKNOWN:
+            return "Unknown error or no error occured";
+            break;
+        case SC_EXITCODE_ALLOC_ERROR:
+            return "Allocation failed - out of memory?";
+            break;
+        case SC_EXITCODE_LOCAL_LISTEN_ERROR:
+            return "Failed to start Selenium listener";
+            break;
+        case SC_EXITCODE_LOCAL_ACCEPT_ERROR:
+            return "Failed to accept Selenium connection";
+            break;
+        case SC_EXITCODE_KGP_INVALID_PACKET:
+            return "Invalid KGP packet received";
+            break;
+        case SC_EXITCODE_KGP_CONNECT_ERROR:
+            return "KGP connection error";
+            break;
+        case SC_EXITCODE_KGP_CONNECTION_CLOSED:
+            return "KGP connection closed from the other side";
+            break;
+        case SC_EXITCODE_KGP_LISTEN_ERROR:
+            return "Failed to start KGP listener";
+            break;
+        case SC_EXITCODE_CMD_STOP:
+            return "Terminated";
+            break;
+        case SC_EXITCODE_CMD_SOCKET_ERROR:
+            return "Internal error: command socket failure";
+            break;
+        case SC_EXITCODE_CMD_CONNECTION_CLOSED:
+            return "Internal error: command socket closed";
+            break;
+        case SC_EXITCODE_DNS_RESET_ERROR:
+            return "DNS reset failed";
+            break;
+        default:
+            return "Invalid exit code";
+            break;
+    }
+}
 #endif

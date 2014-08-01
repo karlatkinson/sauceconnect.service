@@ -78,10 +78,10 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
-    <None Include="sc-4.0-win32\lib\libsauceconnect.a">
+    <None Include="sc-4.3-win32\lib\libsauceconnect.a">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="sc-4.0-win32\lib\libsauceconnect.la">
+    <None Include="sc-4.3-win32\lib\libsauceconnect.la">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -91,13 +91,15 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="sc-4.0-win32\bin\sc.exe">
+    <Content Include="sc-4.3-win32\bin\sc.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="sc-4.0-win32\include\sauceconnect.h">
+    <Content Include="sc-4.3-win32\include\sauceconnect.h">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="sc-4.0-win32\license.html" />
+    <Content Include="sc-4.3-win32\license.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

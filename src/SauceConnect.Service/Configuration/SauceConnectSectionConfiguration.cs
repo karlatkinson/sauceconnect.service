@@ -37,5 +37,14 @@ namespace SauceConnect.Service.Configuration
                 return (double)this["TunnelPollInterval"];
             }
         }
+
+        [ConfigurationProperty("SauceConnectPath", IsRequired = true)]
+        public string SauceConnectPath
+        {
+            get
+            {
+                return (string)this["SauceConnectPath"];
+            }
+        }
     }
 }

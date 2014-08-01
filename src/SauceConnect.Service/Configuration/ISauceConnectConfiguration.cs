@@ -6,5 +6,6 @@ namespace SauceConnect.Service.Configuration
         string AccessKey { get; }
         string TunnelIdentifier { get; }
         double TunnelPollInterval { get; }
+        string SauceConnectPath { get; }
     }
 }

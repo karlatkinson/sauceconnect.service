@@ -33,7 +33,7 @@ namespace SauceConnect.Service
                 {
                     StartInfo =
                         {
-                            FileName = AppDomain.CurrentDomain.BaseDirectory + @"sc-4.0-win32\bin\sc.exe",
+                            FileName = AppDomain.CurrentDomain.BaseDirectory + _sauceConnectConfiguration.SauceConnectPath + @"\sc.exe",
                             UseShellExecute = false,
                             Arguments = args,
                             RedirectStandardOutput = true,
